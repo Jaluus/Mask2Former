@@ -26,6 +26,12 @@ from detectron2.utils.logger import setup_logger
 from mask2former import add_maskformer2_config
 from predictor import VisualizationDemo
 
+from mask2former.modeling.backbone.resnet_CLIP import build_CLIP_backbone
+from mask2former.modeling.transformer_decoder import (
+    mask2former_transformer_decoder_CLIP,
+)
+
+import torch
 
 # constants
 WINDOW_NAME = "mask2former demo"
@@ -50,7 +56,9 @@ def get_parser():
         metavar="FILE",
         help="path to config file",
     )
-    parser.add_argument("--webcam", action="store_true", help="Take inputs from webcam.")
+    parser.add_argument(
+        "--webcam", action="store_true", help="Take inputs from webcam."
+    )
     parser.add_argument("--video-input", help="Path to video file.")
     parser.add_argument(
         "--input",
@@ -107,6 +115,21 @@ if __name__ == "__main__":
 
     demo = VisualizationDemo(cfg)
 
+    # bb = demo.predictor.model.backbone
+
+    # with open("CLIP_state_dict.pt", "rb") as f:
+    #     state_dict_clip = torch.load(f)
+    # state_dict_bb = bb.state_dict()
+
+    # matches = 0
+    # for key in state_dict_clip.keys():
+    #     if key in state_dict_bb.keys():
+    #         state_dict_bb[key] = state_dict_clip[key]
+    #         matches += 1
+
+    # if matches != len(state_dict_clip.keys()):
+    #     sys.exit("Error: not all keys matched, Backbone was changed")
+
     if args.input:
         if len(args.input) == 1:
             args.input = glob.glob(os.path.expanduser(args.input[0]))
@@ -115,7 +138,28 @@ if __name__ == "__main__":
             # use PIL, to be consistent with evaluation
             img = read_image(path, format="BGR")
             start_time = time.time()
-            predictions, visualized_output = demo.run_on_image(img)
+            (
+                predictions,
+                visualized_output,
+                # query_masks,
+                # query_class,
+            ) = demo.run_on_image(img)
+
+            # bs, num_queries, _, _ = query_masks.shape  #
+
+            # # draw the querys
+            # for i in range(num_queries):
+            #     mask = query_masks[0, i].detach().cpu().numpy()
+            #     q_class = query_class[0, i].detach().cpu().numpy()
+            #     max_q_class_idx = np.argmax(q_class)
+            #     heatmap = cv2.applyColorMap(np.uint8(255 * mask), cv2.COLORMAP_JET)
+            #     out_filename = os.path.join(
+            #         args.output,
+            #         f"QUERY_{i}_{max_q_class_idx}_" + os.path.basename(path),
+            #     )
+            #     print(out_filename)
+            #     cv2.imwrite(out_filename, heatmap)
+
             logger.info(
                 "{}: {} in {:.2f}s".format(
                     path,
@@ -131,7 +175,9 @@ if __name__ == "__main__":
                     assert os.path.isdir(args.output), args.output
                     out_filename = os.path.join(args.output, os.path.basename(path))
                 else:
-                    assert len(args.input) == 1, "Please specify a directory with args.output"
+                    assert (
+                        len(args.input) == 1
+                    ), "Please specify a directory with args.output"
                     out_filename = args.output
                 visualized_output.save(out_filename)
             else:
@@ -158,7 +204,9 @@ if __name__ == "__main__":
         num_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         basename = os.path.basename(args.video_input)
         codec, file_ext = (
-            ("x264", ".mkv") if test_opencv_video_format("x264", ".mkv") else ("mp4v", ".mp4")
+            ("x264", ".mkv")
+            if test_opencv_video_format("x264", ".mkv")
+            else ("mp4v", ".mp4")
         )
         if codec == ".mp4v":
             warnings.warn("x264 codec not available, switching to mp4v")

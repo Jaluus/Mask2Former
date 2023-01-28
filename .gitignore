@@ -1,9 +1,11 @@
 # output dir
+output_*
 output
 instant_test_output
 inference_test_output
+cityscapesscripts
 
-
+*.pt
 *.png
 *.json
 *.diff
