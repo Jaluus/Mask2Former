@@ -64,6 +64,12 @@ from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP,
 )
 from mask2former import maskformer_model_CLIP
+import atexit
+
+from utils.process_killer import GracefulKiller
+
+# import hookbase
+from detectron2.engine.train_loop import HookBase
 
 
 class Trainer(DefaultTrainer):
@@ -318,6 +324,15 @@ class Trainer(DefaultTrainer):
         return res
 
 
+class killHook(HookBase):
+    def __init__(self):
+        self.ProcessKiller = GracefulKiller()
+
+    def before_step(self):
+        if self.ProcessKiller.kill_now:
+            raise KeyboardInterrupt("Killed by system signal")
+
+
 def setup(args):
     """
     Create configs and perform basic setups.
@@ -353,6 +368,20 @@ def main(args):
         return res
 
     trainer = Trainer(cfg)
+    trainer.register_hooks([killHook()])
+
+    def save_model(curr_trainer):
+        checkpointer = DetectionCheckpointer(
+            curr_trainer.model,
+            cfg.OUTPUT_DIR,
+            trainer=curr_trainer,
+        )
+        checkpointer.save(
+            f"model_interrupted_{curr_trainer.iter}", iteration=curr_trainer.iter
+        )
+
+    atexit.register(save_model, trainer)
+
     trainer.resume_or_load(resume=args.resume)
     return trainer.train()
 
