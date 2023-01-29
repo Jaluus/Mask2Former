@@ -313,43 +313,17 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
         """
         super().__init__()
 
-        clip_model, _ = clip.load("RN50", device="cuda")
-
-        cityscapes_classes = [
-            "road",
-            "sidewalk",
-            "building",
-            "wall",
-            "fence",
-            "pole",
-            "traffic light",
-            "traffic sign",
-            "vegetation",
-            "terrain",
-            "sky",
-            "person",
-            "rider",
-            "car",
-            "truck",
-            "bus",
-            "train",
-            "motorcycle",
-            "bicycle",
-        ]
-
-        composed_classnames = ["a photo of a " + c for c in cityscapes_classes]
-        tokens = clip.tokenize(composed_classnames).to("cuda")
-        text_targets = clip_model.encode_text(tokens)
-        # append a zero vector for the background class
-        text_targets = torch.cat([text_targets, torch.zeros(1, 1024).to("cuda")])
-        # remove the clip model
-        del clip_model
-
         assert mask_classification, "Only support mask classification model"
         assert (
             num_queries == 20
         ), "Only support 20 queries, one for each class and one for void"
+
         self.mask_classification = mask_classification
+        self.num_classes = num_classes
+        self.hidden_dim = hidden_dim
+        self.num_queries = num_queries
+
+        self.initialize_query_embed()
 
         # positional encoding
         N_steps = hidden_dim // 2
@@ -392,20 +366,6 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
 
         self.decoder_norm = nn.LayerNorm(hidden_dim)
 
-        self.num_queries = num_queries
-
-        # TODO: Start Here
-        # These are initialized with CLIP
-        # num_querys goes to 19 / 20, for each class
-
-        # Now they are initialized with the CLIP weights and then frozen
-        self.query_feat = nn.Embedding(num_queries, hidden_dim, _weight=text_targets)
-        for p in self.query_feat.parameters():
-            p.requires_grad = False
-
-        # Made the query embedding unlearnable
-        self.query_embed = None
-
         # level embedding (we always use 3 scales)
         self.num_feature_levels = 3
         self.level_embed = nn.Embedding(self.num_feature_levels, hidden_dim)
@@ -421,6 +381,107 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
         if self.mask_classification:
             self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.mask_embed = MLP(hidden_dim, hidden_dim, mask_dim, 3)
+
+    def initialize_query_embed(self):
+
+        clip_model, _ = clip.load("RN50", device="cuda")
+
+        cityscapes_classes = [
+            "road",
+            "sidewalk",
+            "building",
+            "wall",
+            "fence",
+            "pole",
+            "traffic light",
+            "traffic sign",
+            "vegetation",
+            "terrain",
+            "sky",
+            "person",
+            "rider",
+            "car",
+            "truck",
+            "bus",
+            "train",
+            "motorcycle",
+            "bicycle",
+        ]
+
+        composed_classnames = ["a photo of a " + c for c in cityscapes_classes]
+        tokens = clip.tokenize(composed_classnames).to("cuda")
+        text_targets = clip_model.encode_text(tokens)
+        # remove the clip model to free memory
+        del clip_model
+
+        # append a zero vector for the background class
+        text_targets = torch.cat([text_targets, torch.zeros(1, 1024).to("cuda")])
+
+        # These are initialized with CLIP
+        # num_querys goes to 19 / 20, for each class
+
+        # Now they are initialized with the CLIP weights and then frozen
+        self.query_feat = nn.Embedding(
+            self.num_queries,
+            self.hidden_dim,
+            _weight=text_targets,
+        )
+        for p in self.query_feat.parameters():
+            p.requires_grad = False
+
+        # Made the query embedding unlearnable
+        self.query_embed = None
+
+    def initialize_query_embed_syn(self):
+
+        clip_model, _ = clip.load("RN50", device="cuda")
+
+        # use synonims
+        cityscapes_classes = [
+            "street",
+            "pavement",
+            "structure",
+            "barrier",
+            "railing",
+            "post",
+            "stoplight",
+            "roadsign",
+            "plants",
+            "landscape",
+            "heavens",
+            "individual",
+            "cyclist",
+            "automobile",
+            "lorry",
+            "autobus",
+            "locomotive",
+            "motorbike",
+            "bike",
+        ]
+
+        composed_classnames = ["a photo of a " + c for c in cityscapes_classes]
+        tokens = clip.tokenize(composed_classnames).to("cuda")
+        text_targets = clip_model.encode_text(tokens)
+        # remove the clip model to free memory
+        del clip_model
+
+        # append a zero vector for the background class
+        text_targets = torch.cat([text_targets, torch.zeros(1, 1024).to("cuda")])
+
+        # These are initialized with CLIP
+        # num_querys goes to 19 / 20, for each class
+
+        # Now they are initialized with the CLIP weights and then frozen
+        self.query_feat = nn.Embedding(
+            self.num_queries,
+            self.hidden_dim,
+            _weight=text_targets,
+        )
+        for p in self.query_feat.parameters():
+            p.requires_grad = False
+
+        # Made the query embedding unlearnable
+        self.query_embed = None
 
     @classmethod
     def from_config(cls, cfg, in_channels, mask_classification):
@@ -441,7 +502,7 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
         # equal to number of decoder layers. With learnable query features, the number of
         # auxiliary losses equals number of decoders plus 1.
         assert cfg.MODEL.MASK_FORMER.DEC_LAYERS >= 1
-        ret["dec_layers"] = cfg.MODEL.MASK_FORMER.DEC_LAYERS
+        ret["dec_layers"] = cfg.MODEL.MASK_FORMER.DEC_LAYERS - 1
         ret["pre_norm"] = cfg.MODEL.MASK_FORMER.PRE_NORM
         ret["enforce_input_project"] = cfg.MODEL.MASK_FORMER.ENFORCE_INPUT_PROJ
 
