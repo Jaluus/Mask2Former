@@ -67,9 +67,16 @@ from mask2former import maskformer_model_CLIP
 import atexit
 
 from utils.process_killer import GracefulKiller
+from utils.wandb_writer import WandbWriter
 
 # import hookbase
 from detectron2.engine.train_loop import HookBase
+
+
+# ignore warnings
+import warnings
+
+warnings.simplefilter("ignore", UserWarning)
 
 
 class Trainer(DefaultTrainer):
@@ -322,6 +329,11 @@ class Trainer(DefaultTrainer):
         res = cls.test(cfg, model, evaluators)
         res = OrderedDict({k + "_TTA": v for k, v in res.items()})
         return res
+
+    def build_writers(self):
+        writers = super().build_writers()
+        writers.append(WandbWriter(config=self.cfg))
+        return writers
 
 
 class killHook(HookBase):
