@@ -29,6 +29,7 @@ from mask2former import add_maskformer2_config
 from mask2former.modeling.backbone.resnet_CLIP import build_CLIP_backbone
 from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP,
+    mask2former_transformer_decoder_NOPOS,
 )
 
 import torch

@@ -62,6 +62,7 @@ from mask2former import (
 from mask2former.modeling.backbone.resnet_CLIP import build_CLIP_backbone
 from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP,
+    mask2former_transformer_decoder_NOPOS,
 )
 from mask2former import maskformer_model_CLIP
 import atexit
@@ -332,7 +333,7 @@ class Trainer(DefaultTrainer):
 
     def build_writers(self):
         writers = super().build_writers()
-        writers.append(WandbWriter(config=self.cfg))
+        writers.append(WandbWriter(project="Mask2Former_Semantic_Cityscapes",config=self.cfg))
         return writers
 
 
