@@ -36,11 +36,8 @@ class WandbWriter(EventWriter):
     def write(self):
         storage = get_event_storage()
 
-        log_dict = {}
-        for k, (v, _) in storage.latest_with_smoothing_hint(self._window_size).items():
-            log_dict[k] = v
-
-        self._run.log(log_dict)
+        for k, (v, iter) in storage.latest_with_smoothing_hint(self._window_size).items():
+            self._run.log({k: v}, step=iter)
 
     def close(self):
         self._run.finish()
