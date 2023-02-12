@@ -1,6 +1,4 @@
 _BASE_: Base-Cityscapes-SemanticSegmentation.yaml
-SOLVER: # Dont optimize the Backbone
-  BACKBONE_MULTIPLIER: 0.0
 MODEL:
 
   BACKBONE:
@@ -30,7 +28,7 @@ MODEL:
     CLASS_WEIGHT: 2.0
     MASK_WEIGHT: 5.0
     DICE_WEIGHT: 5.0
-    HIDDEN_DIM: 256
+    HIDDEN_DIM: 1024 # Increase the Hidden dim for the querys
     NUM_OBJECT_QUERIES: 20
     NHEADS: 8
     DROPOUT: 0.0

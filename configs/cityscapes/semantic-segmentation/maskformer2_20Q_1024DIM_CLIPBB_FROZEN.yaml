@@ -5,6 +5,7 @@ MODEL:
 
   BACKBONE:
     NAME: "build_CLIP_backbone"
+    FREEZE_AT: 1 # freeze the whole model => 1 means the whole model
   WEIGHTS: ""
 
   META_ARCHITECTURE: "MaskFormer"
@@ -23,7 +24,7 @@ MODEL:
     COMMON_STRIDE: 4
     TRANSFORMER_ENC_LAYERS: 6
   MASK_FORMER:
-    TRANSFORMER_DECODER_NAME: "MultiScaleMaskedTransformerDecoder_CLIP"
+    TRANSFORMER_DECODER_NAME: "MultiScaleMaskedTransformerDecoder"
     TRANSFORMER_IN_FEATURE: "multi_scale_pixel_decoder"
     DEEP_SUPERVISION: True
     NO_OBJECT_WEIGHT: 0.1

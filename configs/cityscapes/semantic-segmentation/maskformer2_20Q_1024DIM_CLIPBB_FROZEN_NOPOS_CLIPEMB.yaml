@@ -5,9 +5,10 @@ MODEL:
 
   BACKBONE:
     NAME: "build_CLIP_backbone"
+    FREEZE_AT: 1 # freeze the whole model => 1 means the whole model
   WEIGHTS: ""
 
-  META_ARCHITECTURE: "MaskFormer_CLIP"
+  META_ARCHITECTURE: "MaskFormer"
   SEM_SEG_HEAD:
     NAME: "MaskFormerHead"
     IGNORE_VALUE: 255
