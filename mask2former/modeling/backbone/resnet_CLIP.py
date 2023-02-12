@@ -370,14 +370,18 @@ def build_CLIP_backbone(cfg, input_shape):
         width=resnet_width,
     )
 
+    home_env = os.environ["HOME"]
+
     # Load the Model
-    with open("CLIP_state_dict.pt", "rb") as f:
+    state_path = os.path.join(home_env, "Mask2Former", "CLIP_state_dict.pt")
+    with open(state_path, "rb") as f:
         state_dict = torch.load(f)
     model.load_state_dict(state_dict)
 
-    # freeze the Backbone
-    for param in model.parameters():
-        param.requires_grad = False
+    if cfg.MODEL.BACKBONE.FREEZE_AT > 0:
+        # freeze the Backbone
+        for param in model.parameters():
+            param.requires_grad = False
 
     return model
 
