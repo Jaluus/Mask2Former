@@ -6,6 +6,7 @@ import sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 # fmt: on
 import cv2
+import os
 import numpy as np
 import json
 
@@ -21,10 +22,12 @@ from datasets.cityscapes import Cityscapes
 from mask2former.modeling.backbone.resnet_CLIP import build_CLIP_backbone
 from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP,
+    mask2former_transformer_decoder_NOPOS,
 )
+from mask2former import maskformer_model_CLIP
+
 
 from metrics.stream_metrics import StreamSegMetrics
-
 import torch
 
 
@@ -39,29 +42,30 @@ def setup_cfg(config_file, opts):
     return cfg
 
 
-MODEL_NAMES = [
-    "model_20Q_CLIP",
-    "model_20Q_CLIP_NOPOS",
-    "model_20Q_CLIP_NOPOS_NOMATCH",
-]
-ACDC_subs = ["night", "rain", "snow"]
+HOME_DIR = os.environ["HOME"]
+HPCWORK_DIR = os.environ["HPCWORK"]
+WORK_DIR = os.environ["WORK"]
 
-data_root = "datasets/adac"
+MODEL_DIR = os.path.join(HOME_DIR, "Mask2Former", "CLAIX_OUTPUT")
+SAVE_DIR = os.path.join(HOME_DIR, "Mask2Former", "CLAIX_OUTPUT")
+MODEL_NAMES = os.listdir(MODEL_DIR)
+
+data_root = os.path.join(WORK_DIR, "datasets", "acdc")
 dataset_name = "ACDC"
+ACDC_subs = ["night", "rain", "snow"]
 split = "val"
 
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=True)
 
     for model_name in MODEL_NAMES:
-        CONFIG_FILE = f"output_{model_name[len('model_'):]}/config.yaml"
-        OPTS = ["MODEL.WEIGHTS", f"models/{model_name}.pth"]
+        CONFIG_FILE = os.path.join(MODEL_DIR, model_name, "config.yaml")
+        OPTS = ["MODEL.WEIGHTS", os.path.join(MODEL_DIR, model_name, "model_final.pth")]
 
         cfg = setup_cfg(config_file=CONFIG_FILE, opts=OPTS)
         predictor = DefaultPredictor(cfg)
 
         for ACDC_sub in ACDC_subs:
-
             metrics = StreamSegMetrics(19)
             dataset = Cityscapes(
                 root=data_root,
@@ -85,7 +89,9 @@ if __name__ == "__main__":
 
             score = metrics.get_results()
 
-            with open(
-                f"results/results_{ACDC_sub}_{split}_{model_name}.json", "w"
-            ) as f:
+            save_path = os.path.join(
+                SAVE_DIR, model_name, f"results_{ACDC_sub}_{split}_{model_name}.json"
+            )
+
+            with open(save_path, "w") as f:
                 json.dump(score, f, indent=4)
