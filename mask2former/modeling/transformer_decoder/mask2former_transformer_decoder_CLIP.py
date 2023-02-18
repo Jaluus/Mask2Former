@@ -432,6 +432,67 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
         # Made the query embedding unlearnable
         self.query_embed = None
 
+    def initialize_query_embed_with_suffix(self, suffix="at night"):
+
+        clip_model, _ = clip.load("RN50", device="cuda")
+
+        # use synonims
+        cityscapes_classes = [
+            "road",
+            "sidewalk",
+            "building",
+            "wall",
+            "fence",
+            "pole",
+            "traffic light",
+            "traffic sign",
+            "vegetation",
+            "terrain",
+            "sky",
+            "person",
+            "rider",
+            "car",
+            "truck",
+            "bus",
+            "train",
+            "motorcycle",
+            "bicycle",
+        ]
+
+        if isinstance(suffix, str):
+            composed_classnames = [
+                f"a photo of a {c} {suffix}" for c in cityscapes_classes
+            ]
+        else:
+            assert len(suffix) == len(
+                cityscapes_classes
+            ), "Suffix must be a string or a list of strings with the same length as cityscapes_classes"
+            composed_classnames = [
+                f"a photo of a {c} {s}" for c, s in zip(cityscapes_classes, suffix)
+            ]
+        tokens = clip.tokenize(composed_classnames).to("cuda")
+        text_targets = clip_model.encode_text(tokens)
+        # remove the clip model to free memory
+        del clip_model
+
+        # append a zero vector for the background class
+        text_targets = torch.cat([text_targets, torch.zeros(1, 1024).to("cuda")])
+
+        # These are initialized with CLIP
+        # num_querys goes to 19 / 20, for each class
+
+        # Now they are initialized with the CLIP weights and then frozen
+        self.query_feat = nn.Embedding(
+            self.num_queries,
+            self.hidden_dim,
+            _weight=text_targets,
+        )
+        for p in self.query_feat.parameters():
+            p.requires_grad = False
+
+        # Made the query embedding unlearnable
+        self.query_embed = None
+
     def initialize_query_embed_syn(self):
 
         clip_model, _ = clip.load("RN50", device="cuda")
