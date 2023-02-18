@@ -43,14 +43,16 @@ def setup_cfg(config_file, opts):
 
 
 HOME_DIR = os.environ["HOME"]
-HPCWORK_DIR = os.environ["HPCWORK"]
-WORK_DIR = os.environ["WORK"]
+# HPCWORK_DIR = os.environ["HPCWORK"]
+# WORK_DIR = os.environ["WORK"]
 
 MODEL_DIR = os.path.join(HOME_DIR, "Mask2Former", "CLAIX_OUTPUT")
-SAVE_DIR = os.path.join(HOME_DIR, "Mask2Former", "CLAIX_OUTPUT")
+SAVE_DIR = os.path.join(HOME_DIR, "Mask2Former", "ACDC_RESULTS")
 MODEL_NAMES = os.listdir(MODEL_DIR)
 
-data_root = os.path.join(WORK_DIR, "datasets", "acdc")
+os.makedirs(SAVE_DIR, exist_ok=True)
+
+data_root = os.path.join(HOME_DIR, "Mask2Former", "datasets", "acdc")
 dataset_name = "ACDC"
 ACDC_subs = ["night", "rain", "snow"]
 split = "val"
@@ -89,8 +91,12 @@ if __name__ == "__main__":
 
             score = metrics.get_results()
 
+            os.makedirs(os.path.join(SAVE_DIR, model_name), exist_ok=True)
+
             save_path = os.path.join(
-                SAVE_DIR, model_name, f"results_{ACDC_sub}_{split}_{model_name}.json"
+                SAVE_DIR,
+                model_name,
+                f"results_{ACDC_sub}_{split}_NOSUFFIX.json",
             )
 
             with open(save_path, "w") as f:

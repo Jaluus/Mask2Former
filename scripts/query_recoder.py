@@ -31,8 +31,39 @@ from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP,
     mask2former_transformer_decoder_NOPOS,
 )
+from mask2former import maskformer_model_CLIP
 
 import torch
+
+
+class QueryPredictor(DefaultPredictor):
+    def __call__(self, original_image):
+        """
+        Args:
+            original_image (np.ndarray): an image of shape (H, W, C) (in BGR order).
+
+        Returns:
+            predictions (dict):
+                the output of the model for one image only.
+                See :doc:`/tutorials/models` for details about the format.
+        """
+        with torch.no_grad():  # https://github.com/sphinx-doc/sphinx/issues/4258
+            # Apply pre-processing to image.
+            if self.input_format == "RGB":
+                # whether the model expects BGR inputs or RGB
+                original_image = original_image[:, :, ::-1]
+            height, width = original_image.shape[:2]
+            image = self.aug.get_transform(original_image).apply_image(original_image)
+            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+
+            inputs = {"image": image, "height": height, "width": width}
+            (
+                predictions,
+                mask_pred_results_softmax,
+                mask_cls_results_softmax,
+            ) = self.model.forward_with_logits([inputs])
+            predictions = predictions[0]
+            return predictions, mask_pred_results_softmax, mask_cls_results_softmax
 
 
 def setup_cfg(args):
@@ -93,22 +124,26 @@ if __name__ == "__main__":
     logger = setup_logger()
     logger.info("Arguments: " + str(args))
 
-    eval_type = "train"
-    out_dir = "output_panoptic"
+    eval_type = "val"
+    acdc_subset = "rain"
+    out_dir = r"ACDC_RESULTS/maskformer2_20Q"
 
     cfg = setup_cfg(args)
 
-    predictor = DefaultPredictor(cfg)
+    predictor = QueryPredictor(cfg)
 
+    # save query features
     query_features = (
         predictor.model.sem_seg_head.predictor.query_feat.weight.detach().cpu().numpy()
     )
-
-    np.save(f"{out_dir}/query_features_{eval_type}.npy", query_features)
-    np.savetxt(f"{out_dir}/query_features_{eval_type}.txt", query_features, fmt="%s")
+    np.savetxt(
+        f"{out_dir}/queryfeatures_{eval_type}_{acdc_subset}.txt",
+        query_features,
+        fmt="%s",
+    )
 
     query_predictions = [[] for _ in range(query_features.shape[0])]
-    DATASET_PATH = f"datasets/cityscapes/leftImg8bit/{eval_type}"
+    DATASET_PATH = f"datasets/acdc/rgb_anon/{acdc_subset}/{eval_type}"
     cities = os.listdir(DATASET_PATH)
     for c_idx, city in enumerate(cities):
         image_paths = glob.glob(os.path.join(DATASET_PATH, city, "*.png"))
@@ -130,7 +165,8 @@ if __name__ == "__main__":
 
                 query_predictions[i].append(max_q_class_idx)
 
-    np.save(f"{out_dir}/query_predictions_{eval_type}.npy", query_predictions)
     np.savetxt(
-        f"{out_dir}/query_predictions_{eval_type}.txt", query_predictions, fmt="%s"
+        f"{out_dir}/querypredictions_{eval_type}_{acdc_subset}.txt",
+        query_predictions,
+        fmt="%s",
     )
