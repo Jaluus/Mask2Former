@@ -162,6 +162,14 @@ class MaskFormer_CLIP(nn.Module):
     def device(self):
         return self.pixel_mean.device
 
+    def forward_backbone(self, batched_inputs):
+        images = [x["image"].to(self.device) for x in batched_inputs]
+        images = [(x - self.pixel_mean) / self.pixel_std for x in images]
+        images = ImageList.from_tensors(images, self.size_divisibility)
+
+        features = self.backbone(images.tensor)
+        return features
+
     def forward(self, batched_inputs):
         """
         Args:

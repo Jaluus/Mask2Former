@@ -275,6 +275,14 @@ class MaskFormer(nn.Module):
 
             return processed_results
 
+    def forward_backbone(self, batched_inputs):
+        images = [x["image"].to(self.device) for x in batched_inputs]
+        images = [(x - self.pixel_mean) / self.pixel_std for x in images]
+        images = ImageList.from_tensors(images, self.size_divisibility)
+
+        features = self.backbone(images.tensor)
+        return features
+
     def forward_with_logits(self, batched_inputs):
         """
         Args:

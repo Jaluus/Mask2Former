@@ -322,6 +322,7 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
         self.hidden_dim = hidden_dim
         self.num_queries = num_queries
 
+        self.perturb_querys = True
         self.initialize_query_embed()
 
         # positional encoding
@@ -434,6 +435,37 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
         # Made the query embedding unlearnable
         self.query_embed = None
 
+    def initialize_query_embed_with_array(self, word_array):
+
+        clip_model, _ = clip.load("RN50", device="cuda")
+
+        assert (
+            len(word_array) == self.num_queries
+        ), "The array must have the same length as the number of queries"
+
+        tokens = clip.tokenize(word_array).to("cuda")
+        text_targets = clip_model.encode_text(tokens)
+        # remove the clip model to free memory
+        del clip_model
+
+        # append a zero vector for the background class
+        text_targets = torch.cat([text_targets, torch.zeros(1, 1024).to("cuda")])
+
+        # These are initialized with CLIP
+        # num_querys goes to 19 / 20, for each class
+
+        # Now they are initialized with the CLIP weights and then frozen
+        self.query_feat = nn.Embedding(
+            self.num_queries,
+            self.hidden_dim,
+            _weight=text_targets,
+        )
+        for p in self.query_feat.parameters():
+            p.requires_grad = False
+
+        # Made the query embedding unlearnable
+        self.query_embed = None
+
     def initialize_query_embed_syn(self):
         clip_model, _ = clip.load("RN50", device="cuda")
 
@@ -469,6 +501,9 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
         # append a zero vector for the background class
         text_targets = torch.cat([text_targets, torch.zeros(1, 1024).to("cuda")])
 
+        # multiply by 5 to increase the standard deviation of the query embedding
+        # this is done to match the standard deviation of the feature embedding of not using CLIP
+        text_targets = text_targets * 5
         # These are initialized with CLIP
         # num_querys goes to 19 / 20, for each class
 
@@ -536,7 +571,10 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
         _, bs, _ = src[0].shape
 
         # perturb query embedding
-        gaussian_noise = torch.randn_like(self.query_feat.weight) * 0.1
+        if self.perturb_querys:
+            gaussian_noise = torch.randn_like(self.query_feat.weight) * 0.1
+        else:
+            gaussian_noise = 0
         # QxNxC
         # This was Changed
         query_embed = self.query_embed  # .weight.unsqueeze(1).repeat(1, bs, 1)

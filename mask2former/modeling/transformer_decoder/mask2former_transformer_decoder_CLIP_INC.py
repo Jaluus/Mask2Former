@@ -434,6 +434,37 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC(nn.Module):
         # Made the query embedding unlearnable
         self.query_embed = None
 
+    def initialize_query_embed_with_array(self, word_array):
+
+        clip_model, _ = clip.load("RN50", device="cuda")
+
+        assert (
+            len(word_array) == self.num_queries
+        ), "The array must have the same length as the number of queries"
+
+        tokens = clip.tokenize(word_array).to("cuda")
+        text_targets = clip_model.encode_text(tokens)
+        # remove the clip model to free memory
+        del clip_model
+
+        # append a zero vector for the background class
+        text_targets = torch.cat([text_targets, torch.zeros(1, 1024).to("cuda")])
+
+        # These are initialized with CLIP
+        # num_querys goes to 19 / 20, for each class
+
+        # Now they are initialized with the CLIP weights and then frozen
+        self.query_feat = nn.Embedding(
+            self.num_queries,
+            self.hidden_dim,
+            _weight=text_targets,
+        )
+        for p in self.query_feat.parameters():
+            p.requires_grad = False
+
+        # Made the query embedding unlearnable
+        self.query_embed = None
+
     def initialize_query_embed_syn(self):
         clip_model, _ = clip.load("RN50", device="cuda")
 
@@ -468,6 +499,10 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC(nn.Module):
 
         # append a zero vector for the background class
         text_targets = torch.cat([text_targets, torch.zeros(1, 1024).to("cuda")])
+
+        # multiply by 5 to increase the standard deviation of the query embedding
+        # this is done to match the standard deviation of the feature embedding of not using CLIP
+        text_targets = text_targets * 5
 
         # These are initialized with CLIP
         # num_querys goes to 19 / 20, for each class
