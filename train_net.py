@@ -67,6 +67,7 @@ from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_NOPOS,
     mask2former_transformer_decoder_CLIP_INC,
     mask2former_transformer_decoder_CLIP_INC_GAUSS,
+    mask2former_transformer_decoder_CLIP_TEXTPERTURB,
 )
 from mask2former import maskformer_model_CLIP
 import atexit
