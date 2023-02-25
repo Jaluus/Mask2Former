@@ -59,6 +59,8 @@ from mask2former import (
     add_maskformer2_config,
 )
 
+from datasets import register_ACDC
+from datasets.ACDC_evaluation import ACDCEvaluator, ACDCSemSegEvaluator
 from mask2former.modeling.backbone.resnet_CLIP import build_CLIP_backbone
 from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP,
@@ -177,6 +179,9 @@ class Trainer(DefaultTrainer):
                     torch.cuda.device_count() > comm.get_rank()
                 ), "CityscapesEvaluator currently do not work with multiple machines."
                 evaluator_list.append(CityscapesInstanceEvaluator(dataset_name))
+        # ACDC
+        if evaluator_type == "acdc_sem_seg":
+            return ACDCSemSegEvaluator(dataset_name)
         # ADE20K
         if (
             evaluator_type == "ade20k_panoptic_seg"
