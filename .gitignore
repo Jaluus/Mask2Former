@@ -6,6 +6,9 @@ inference_test_output
 cityscapesscripts
 wandb
 CLAIX_OUTPUT
+archive
+ACDC_RESULTS
+.JPG
 
 *.pt
 *.png

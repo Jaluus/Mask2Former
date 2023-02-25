@@ -439,7 +439,7 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC(nn.Module):
         clip_model, _ = clip.load("RN50", device="cuda")
 
         assert (
-            len(word_array) == self.num_queries
+            len(word_array) == self.num_queries - 1
         ), "The array must have the same length as the number of queries"
 
         tokens = clip.tokenize(word_array).to("cuda")
