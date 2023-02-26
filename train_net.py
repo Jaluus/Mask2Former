@@ -60,7 +60,7 @@ from mask2former import (
 )
 
 from datasets import register_ACDC
-from datasets.ACDC_evaluation import ACDCEvaluator, ACDCSemSegEvaluator
+from datasets.ACDC_evaluation import ACDCSemSegEvaluator
 from mask2former.modeling.backbone.resnet_CLIP import build_CLIP_backbone
 from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP,
@@ -181,7 +181,7 @@ class Trainer(DefaultTrainer):
                 ), "CityscapesEvaluator currently do not work with multiple machines."
                 evaluator_list.append(CityscapesInstanceEvaluator(dataset_name))
         # ACDC
-        if evaluator_type == "acdc_sem_seg":
+        if evaluator_type == "ACDC_sem_seg":
             return ACDCSemSegEvaluator(dataset_name)
         # ADE20K
         if (
@@ -341,9 +341,11 @@ class Trainer(DefaultTrainer):
 
     def build_writers(self):
         writers = super().build_writers()
-        writers.append(
-            WandbWriter(project="Mask2Former_Semantic_Cityscapes", config=self.cfg)
-        )
+        try:
+            project_name = os.environ["WANDB_PROJECT_NAME"]
+        except KeyError:
+            project_name = "Mask2Former_Semantic_Cityscapes"
+        writers.append(WandbWriter(project=project_name, config=self.cfg))
         return writers
 
     def freeze_backbone(self):

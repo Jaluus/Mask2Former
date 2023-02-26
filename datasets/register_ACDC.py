@@ -1,10 +1,5 @@
 import os
 import logging
-
-from detectron2.utils.logger import setup_logger
-
-setup_logger()
-
 from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.data.datasets.builtin_meta import _get_builtin_metadata
 from detectron2.utils.file_io import PathManager
@@ -68,7 +63,6 @@ def load_ACDC_semantic(image_dir, gt_dir):
 
 
 def register_all_ACDC(root):
-
     domains = ["rain", "fog", "night", "snow"]
     splits = ["train", "val"]
 
