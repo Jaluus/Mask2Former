@@ -88,6 +88,9 @@ class ACDCSemSegEvaluator(ACDCEvaluator):
         cityscapes_eval.args.predictionWalk = None
         cityscapes_eval.args.JSONOutput = False
         cityscapes_eval.args.colorized = False
+        # if there are no instances, do not evaluate instance-level scores!
+        # led to an error in the ACDC dataset
+        cityscapes_eval.args.evalInstLevelScore = False
 
         # These lines are adopted from
         # https://github.com/mcordts/cityscapesScripts/blob/master/cityscapesscripts/evaluation/evalPixelLevelSemanticLabeling.py # noqa
