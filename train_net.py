@@ -346,6 +346,18 @@ class Trainer(DefaultTrainer):
         )
         return writers
 
+    def freeze_backbone(self):
+        for param in self.model.backbone.parameters():
+            param.requires_grad = False
+
+    def freeze_pixel_decoder(self):
+        for param in self.model.sem_seg_head.pixel_decoder.parameters():
+            param.requires_grad = False
+
+    def freeze_transformer_decoder(self):
+        for param in self.model.sem_seg_head.predictor.parameters():
+            param.requires_grad = False
+
 
 class killHook(HookBase):
     def __init__(self):
