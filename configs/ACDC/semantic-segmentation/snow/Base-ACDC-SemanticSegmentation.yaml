@@ -14,8 +14,8 @@ MODEL:
     NORM: "SyncBN"  # use syncbn for cityscapes dataset
     RES5_MULTI_GRID: [1, 1, 1]  # not used
 DATASETS:
-  TRAIN: ("ACDC_night_fine_sem_seg_train",)
-  TEST: ("ACDC_night_fine_sem_seg_val","cityscapes_fine_sem_seg_val")
+  TRAIN: ("ACDC_snow_fine_sem_seg_train",)
+  TEST: ("ACDC_snow_fine_sem_seg_val","cityscapes_fine_sem_seg_val")
 SOLVER:
   IMS_PER_BATCH: 16
   BASE_LR: 0.0001
