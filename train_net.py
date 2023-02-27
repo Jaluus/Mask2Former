@@ -348,18 +348,6 @@ class Trainer(DefaultTrainer):
         writers.append(WandbWriter(project=project_name, config=self.cfg))
         return writers
 
-    def freeze_backbone(self):
-        for param in self.model.backbone.parameters():
-            param.requires_grad = False
-
-    def freeze_pixel_decoder(self):
-        for param in self.model.sem_seg_head.pixel_decoder.parameters():
-            param.requires_grad = False
-
-    def freeze_transformer_decoder(self):
-        for param in self.model.sem_seg_head.predictor.parameters():
-            param.requires_grad = False
-
 
 class killHook(HookBase):
     def __init__(self):
@@ -391,6 +379,7 @@ def setup(args):
 
 def main(args):
     cfg = setup(args)
+    logger = logging.getLogger("mask2former")
 
     if args.eval_only:
         model = Trainer.build_model(cfg)
@@ -406,6 +395,20 @@ def main(args):
 
     trainer = Trainer(cfg)
     trainer.register_hooks([killHook()])
+
+    try:
+        frozen_transformer_layers = os.environ["FROZEN_TRANSFORMER_LAYERS"]
+        frozen_transformer_layers = [
+            int(i) for i in frozen_transformer_layers.split(",")
+        ]
+        trainer.model.sem_seg_head.predictor.freeze_transformer_layers(
+            frozen_transformer_layers
+        )
+        logger.info(
+            f"Froze transformer layers {frozen_transformer_layers} of predictor"
+        )
+    except KeyError:
+        logger.info("No frozen layers specified")
 
     def save_model(curr_trainer):
         checkpointer = DetectionCheckpointer(

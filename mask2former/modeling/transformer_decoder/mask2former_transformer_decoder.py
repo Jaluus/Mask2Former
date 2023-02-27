@@ -309,7 +309,7 @@ class MultiScaleMaskedTransformerDecoder(nn.Module):
         """
         super().__init__()
         # Custom Variables
-        self.layers_frozen = []
+        self.isInference = False
         # End Custom Variables
 
         assert mask_classification, "Only support mask classification model"
