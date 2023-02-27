@@ -311,6 +311,9 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
                 channels and hidden dim is identical
         """
         super().__init__()
+        # Custom Variables
+        self.isInference = False
+        # End Custom Variables
 
         assert mask_classification, "Only support mask classification model"
         assert (
@@ -434,6 +437,17 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
 
         # Made the query embedding unlearnable
         self.query_embed = None
+
+    def freeze_transformer_layers(self, layers_to_freeze):
+        # Freeze layers
+        for frozen_layer in layers_to_freeze:
+            assert frozen_layer < self.num_layers, "Frozen layer index is out of range"
+            for p in self.transformer_self_attention_layers[frozen_layer].parameters():
+                p.requires_grad = False
+            for p in self.transformer_cross_attention_layers[frozen_layer].parameters():
+                p.requires_grad = False
+            for p in self.transformer_ffn_layers[frozen_layer].parameters():
+                p.requires_grad = False
 
     def initialize_query_embed_with_array(self, word_array):
 
