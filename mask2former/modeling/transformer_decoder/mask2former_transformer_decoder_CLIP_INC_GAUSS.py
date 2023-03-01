@@ -325,7 +325,6 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
         self.hidden_dim = hidden_dim
         self.num_queries = num_queries
 
-        self.perturb_querys = True
         self.initialize_query_embed()
 
         # positional encoding
@@ -594,7 +593,7 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
         _, bs, _ = src[0].shape
 
         # perturb query embedding
-        if self.perturb_querys:
+        if not self.isInference:
             gaussian_noise = torch.randn_like(self.query_feat.weight) * 0.1
         else:
             gaussian_noise = 0
