@@ -26,7 +26,7 @@ import torch
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
 from detectron2.data import MetadataCatalog, build_detection_train_loader
-from detectron2.engine import default_argument_parser, default_setup, launch
+from detectron2.engine import default_setup, launch
 from detectron2.evaluation import verify_results
 from detectron2.projects.deeplab import add_deeplab_config, build_lr_scheduler
 from detectron2.solver.build import maybe_add_gradient_clipping
@@ -56,6 +56,7 @@ from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP_TEXTPERTURB,
     mask2former_transformer_decoder_NOPOS,
 )
+from utils.arg_parser import my_argument_parser
 from utils.model_trainer import Trainer, killHook
 
 warnings.simplefilter("ignore", UserWarning)
@@ -81,20 +82,23 @@ def setup(args):
 
 
 def main(args):
-    cfg = setup(args)
     logger = logging.getLogger("mask2former")
+    frozen_transformer_layers = [
+        int(i) for i in args["freeze-transformer-layers"].split(",")
+    ]
+    del args["freeze-transformer-layers"]
 
-    try:
-        frozen_transformer_layers = os.environ["FROZEN_TRANSFORMER_LAYERS"]
-        frozen_transformer_layers = [
-            int(i) for i in frozen_transformer_layers.split(",")
-        ]
-        logger.info(
-            f"Froze transformer layers {frozen_transformer_layers} of predictor"
+    freeze_everything_except_output_FFN = args["freeze-everything-except-output-FFN"]
+    del args["freeze-everything-except-output-FFN"]
+
+    logger.info("Frozen layers: {}".format(frozen_transformer_layers))
+    logger.info(
+        "Freeze everything except output FFN: {}".format(
+            freeze_everything_except_output_FFN
         )
-    except KeyError:
-        frozen_transformer_layers = []
-        logger.info("No frozen layers specified")
+    )
+
+    cfg = setup(args)
 
     if args.eval_only:
         model = Trainer.build_model(cfg)
@@ -108,7 +112,11 @@ def main(args):
             verify_results(cfg, res)
         return res
 
-    trainer = Trainer(cfg, frozen_transformer_layers)
+    trainer = Trainer(
+        cfg,
+        frozen_transformer_layers,
+        freeze_everything_except_output_FFN,
+    )
     trainer.register_hooks([killHook()])
 
     def save_model(curr_trainer):
@@ -128,7 +136,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    args = default_argument_parser().parse_args()
+    args = my_argument_parser().parse_args()
     print("Command Line Args:", args)
     launch(
         main,

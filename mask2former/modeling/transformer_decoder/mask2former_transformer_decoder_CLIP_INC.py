@@ -384,6 +384,16 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC(nn.Module):
             self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.mask_embed = MLP(hidden_dim, hidden_dim, mask_dim, 3)
 
+    def freeze_everything_except_output_FFNs(self):
+        # Freeze layers
+        for p in self.parameters():
+            p.requires_grad = False
+
+        for p in self.class_embed.parameters():
+            p.requires_grad = True
+        for p in self.mask_embed.parameters():
+            p.requires_grad = True
+
     def freeze_transformer_layers(self, layers_to_freeze):
         # Freeze layers
         for frozen_layer in layers_to_freeze:
@@ -449,7 +459,6 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC(nn.Module):
         self.query_embed = None
 
     def initialize_query_embed_with_array(self, word_array):
-
         clip_model, _ = clip.load("RN50", device="cuda")
 
         assert (

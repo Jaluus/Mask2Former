@@ -245,7 +245,6 @@ class MLP(nn.Module):
 
 @TRANSFORMER_DECODER_REGISTRY.register()
 class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
-
     _version = 2
 
     def _load_from_state_dict(
@@ -385,6 +384,16 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
             self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.mask_embed = MLP(hidden_dim, hidden_dim, mask_dim, 3)
 
+    def freeze_everything_except_output_FFNs(self):
+        # Freeze layers
+        for p in self.parameters():
+            p.requires_grad = False
+
+        for p in self.class_embed.parameters():
+            p.requires_grad = True
+        for p in self.mask_embed.parameters():
+            p.requires_grad = True
+
     def freeze_transformer_layers(self, layers_to_freeze):
         # Freeze layers
         for frozen_layer in layers_to_freeze:
@@ -397,7 +406,6 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
                 p.requires_grad = False
 
     def initialize_query_embed(self):
-
         clip_model, _ = clip.load("RN50", device="cuda")
 
         cityscapes_classes = [
@@ -447,7 +455,6 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
         self.query_embed = None
 
     def initialize_query_embed_with_suffix(self, suffix="at night"):
-
         clip_model, _ = clip.load("RN50", device="cuda")
 
         # use synonims
@@ -508,7 +515,6 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
         self.query_embed = None
 
     def initialize_query_embed_with_array(self, word_array):
-
         clip_model, _ = clip.load("RN50", device="cuda")
 
         assert (
@@ -539,7 +545,6 @@ class MultiScaleMaskedTransformerDecoder_CLIP(nn.Module):
         self.query_embed = None
 
     def initialize_query_embed_syn(self):
-
         clip_model, _ = clip.load("RN50", device="cuda")
 
         # use synonims

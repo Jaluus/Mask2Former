@@ -27,7 +27,6 @@ import torch
 from detectron2.data import MetadataCatalog, build_detection_train_loader
 from detectron2.engine import (
     DefaultTrainer,
-    default_argument_parser,
     default_setup,
     launch,
 )
@@ -106,7 +105,12 @@ class Trainer(DefaultTrainer):
     Extension of the Trainer class adapted to MaskFormer.
     """
 
-    def __init__(self, cfg, frozen_transformer_layers=[]):
+    def __init__(
+        self,
+        cfg,
+        frozen_transformer_layers=[],
+        freeze_everything_except_output_FFN=False,
+    ):
         """
         Args:
             cfg (CfgNode):
@@ -127,9 +131,13 @@ class Trainer(DefaultTrainer):
         model = self.build_model(cfg)
 
         # freeze transformer layers
-        model.sem_seg_head.predictor.freeze_transformer_layers(
-            frozen_transformer_layers
-        )
+        if freeze_everything_except_output_FFN:
+            model.sem_seg_head.predictor.freeze_everything_except_output_FFN()
+
+        if len(frozen_transformer_layers) > 0:
+            model.sem_seg_head.predictor.freeze_transformer_layers(
+                frozen_transformer_layers
+            )
 
         optimizer = self.build_optimizer(cfg, model)
         data_loader = self.build_train_loader(cfg)
