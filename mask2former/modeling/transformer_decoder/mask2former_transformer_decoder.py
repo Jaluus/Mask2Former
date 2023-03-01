@@ -377,8 +377,8 @@ class MultiScaleMaskedTransformerDecoder(nn.Module):
         if self.mask_classification:
             self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.mask_embed = MLP(hidden_dim, hidden_dim, mask_dim, 3)
-
-    def freeze_everything_except_output_FFNs(self):
+        
+    def freeze_everything_except_output_FFN(self):
         # Freeze layers
         for p in self.parameters():
             p.requires_grad = False

@@ -437,7 +437,7 @@ class MultiScaleMaskedTransformerDecoder_CLIP_INC_GAUSS(nn.Module):
         # Made the query embedding unlearnable
         self.query_embed = None
 
-    def freeze_everything_except_output_FFNs(self):
+    def freeze_everything_except_output_FFN(self):
         # Freeze layers
         for p in self.parameters():
             p.requires_grad = False
