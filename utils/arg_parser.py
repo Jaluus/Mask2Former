@@ -56,13 +56,12 @@ Run on multiple machines:
     )
 
     parser.add_argument(
-        "--freeze-everything-except-output-FFN",
-        type=bool,
-        default=False,
+        "--freeze_everything_except_output_FFN",
+        action="store_true",
         help="Freeze everything except the output FFN",
     )
     parser.add_argument(
-        "--freeze-transformer-layers",
+        "--frozen_transformer_layers",
         type=str,
         default="",
         help="Freeze the specified transformer layers in format 1,2,3",
