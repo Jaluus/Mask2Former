@@ -136,7 +136,7 @@ class Trainer(DefaultTrainer):
         if freeze_everything_except_output_FFN:
             model.sem_seg_head.predictor.freeze_everything_except_output_FFN()
             model.backbone.eval()
-            model.model.sem_seg_head.pixel_decoder.eval()
+            model.sem_seg_head.pixel_decoder.eval()
             for param in model.sem_seg_head.pixel_decoder.parameters():
                 param.requires_grad = False
             for param in model.backbone.parameters():
