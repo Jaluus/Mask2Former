@@ -60,6 +60,19 @@ Run on multiple machines:
         action="store_true",
         help="Freeze everything except the output FFN",
     )
+
+    parser.add_argument(
+        "--freeze_backbone",
+        action="store_true",
+        help="Freeze the backbone",
+    )
+
+    parser.add_argument(
+        "--freeze_pixel_decoder",
+        action="store_true",
+        help="Freeze the pixel decoder",
+    )
+
     parser.add_argument(
         "--frozen_transformer_layers",
         type=str,

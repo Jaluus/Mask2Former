@@ -84,33 +84,24 @@ def setup(args):
 def main(args):
     logger = logging.getLogger("mask2former")
 
-    try:
-        frozen_transformer_layers = getattr(args, "frozen_transformer_layers", "")
-        if frozen_transformer_layers != "":
-            frozen_transformer_layers = [
-                int(i) for i in frozen_transformer_layers.split(",")
-            ]
-        else:
-            frozen_transformer_layers = []
-        logger.info("Frozen layers: {}".format(frozen_transformer_layers))
-        delattr(args, "frozen_transformer_layers")
-    except AttributeError:
+    frozen_transformer_layers = args.frozen_transformer_layers
+    if frozen_transformer_layers != "":
+        frozen_transformer_layers = [
+            int(i) for i in frozen_transformer_layers.split(",")
+        ]
+    else:
         frozen_transformer_layers = []
-        logger.info("Delete frozen_transformer_layers failed")
+    del args.frozen_transformer_layers
+    logger.info("Frozen transformer layers: {}".format(frozen_transformer_layers))
 
-    try:
-        freeze_everything_except_output_FFN = getattr(
-            args, "freeze_everything_except_output_FFN", False
-        )
-        logger.info(
-            "Freeze everything except output FFN: {}".format(
-                freeze_everything_except_output_FFN
-            )
-        )
-        delattr(args, "freeze_everything_except_output_FFN")
-    except AttributeError:
-        freeze_everything_except_output_FFN = False
-        logger.info("Delete freeze_everything_except_output_FFN failed")
+    freeze_everything_except_output_FFN = args.freeze_everything_except_output_FFN
+    del args.freeze_everything_except_output_FFN
+
+    freeze_backbone = args.freeze_backbone
+    del args.freeze_backbone
+
+    freeze_pixel_decoder = args.freeze_pixel_decoder
+    del args.freeze_pixel_decoder
 
     cfg = setup(args)
 
@@ -130,6 +121,8 @@ def main(args):
         cfg,
         frozen_transformer_layers,
         freeze_everything_except_output_FFN,
+        freeze_backbone,
+        freeze_pixel_decoder,
     )
     trainer.register_hooks([killHook()])
 

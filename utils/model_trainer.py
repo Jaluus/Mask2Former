@@ -110,6 +110,8 @@ class Trainer(DefaultTrainer):
         cfg,
         frozen_transformer_layers=[],
         freeze_everything_except_output_FFN=False,
+        freeze_backbone=False,
+        freeze_pixel_decoder=False,
     ):
         """
         Args:
@@ -133,6 +135,22 @@ class Trainer(DefaultTrainer):
         # freeze transformer layers
         if freeze_everything_except_output_FFN:
             model.sem_seg_head.predictor.freeze_everything_except_output_FFN()
+            model.backbone.eval()
+            model.model.sem_seg_head.pixel_decoder.eval()
+            for param in model.sem_seg_head.pixel_decoder.parameters():
+                param.requires_grad = False
+            for param in model.backbone.parameters():
+                param.requires_grad = False
+
+        if freeze_backbone:
+            for param in model.backbone.parameters():
+                param.requires_grad = False
+            model.backbone.eval()
+
+        if freeze_pixel_decoder:
+            for param in model.sem_seg_head.pixel_decoder.parameters():
+                param.requires_grad = False
+            model.sem_seg_head.pixel_decoder.eval()
 
         if len(frozen_transformer_layers) > 0:
             model.sem_seg_head.predictor.freeze_transformer_layers(
