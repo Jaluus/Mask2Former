@@ -244,7 +244,7 @@ class MLP(nn.Module):
 
 
 @TRANSFORMER_DECODER_REGISTRY.register()
-class MultiScaleMaskedTransformerDecoder_CLIP_TEXTPERTURB(nn.Module):
+class MultiScaleMaskedTransformerDecoder_CLIP_DOMAINTEXTPERTURB(nn.Module):
     _version = 2
 
     def _load_from_state_dict(
@@ -743,28 +743,28 @@ class MultiScaleMaskedTransformerDecoder_CLIP_TEXTPERTURB(nn.Module):
         # prefix + class + suffix
         class_texts = []
         random_startword_idx = torch.randint(
-            0, len(self.start_words), len(self.cityscapes_classes)
+            0, len(self.start_words), (len(self.cityscapes_classes),)
         )
         random_image_description_idx = torch.randint(
-            0, len(self.image_descriptions), len(self.cityscapes_classes)
+            0, len(self.image_descriptions), (len(self.cityscapes_classes),)
         )
         random_image_type_idx = torch.randint(
-            0, len(self.image_types), len(self.cityscapes_classes)
+            0, len(self.image_types), (len(self.cityscapes_classes),)
         )
         random_class_description_idx = torch.randint(
-            0, len(self.class_descriptions), len(self.cityscapes_classes)
+            0, len(self.class_descriptions), (len(self.cityscapes_classes),)
         )
         random_connector_idx = torch.randint(
-            0, len(self.connector_words), len(self.cityscapes_classes)
+            0, len(self.connector_words), (len(self.cityscapes_classes),)
         )
         random_weather_idx = torch.randint(
-            0, len(self.weather_conditions), len(self.cityscapes_classes)
+            0, len(self.weather_conditions), (len(self.cityscapes_classes),)
         )
         random_time_idx = torch.randint(
-            0, len(self.times_of_day), len(self.cityscapes_classes)
+            0, len(self.times_of_day), (len(self.cityscapes_classes),)
         )
         random_suffix_idx = torch.randint(
-            0, len(self.suffixes), len(self.cityscapes_classes)
+            0, len(self.suffixes), (len(self.cityscapes_classes),)
         )
 
         for i in range(len(self.cityscapes_classes)):

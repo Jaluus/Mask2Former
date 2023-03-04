@@ -60,9 +60,9 @@ REF_MODEL_NAME = "maskformer2_R50_bs16_90k"
 COMPARE_MODEL_DIR = "/home/ut964798/Mask2Former/CLAIX_OUTPUT/ACDC_NIGHT"
 COMPARED_NAMES = [
     "maskformer2_R50_bs16_90k",
-    "maskformer2_R50_bs16_90k_FFN",
-    "maskformer2_R50_bs16_90k_PDF",
-    "maskformer2_R50_bs16_90k_TDLL",
+    "maskformer2_R50_bs16_90k_BB",
+    "maskformer2_R50_bs16_90k_BBPD",
+    "maskformer2_R50_bs16_90k_BBPDTD",
 ]
 
 CONFIG_FILE_REF = os.path.join(REF_MODEL_DIR, REF_MODEL_NAME, "config.yaml")
@@ -74,7 +74,7 @@ OPTS_REF = [
 cfg_ref = setup_cfg(config_file=CONFIG_FILE_REF, opts=OPTS_REF)
 model_ref = build_model(cfg_ref)
 DetectionCheckpointer(model_ref).load(cfg_ref.MODEL.WEIGHTS)
-
+model_ref.eval()
 
 BB_ref = model_ref.backbone
 PD_ref = model_ref.sem_seg_head.pixel_decoder
@@ -93,12 +93,14 @@ def compare_models(model_1, model_2):
         model_1.state_dict().items(), model_2.state_dict().items()
     ):
         if torch.equal(key_item_1[1], key_item_2[1]):
-            pass
+            continue
         else:
+            if "norm" in key_item_1[0]:
+                continue
             models_differ += 1
             if key_item_1[0] == key_item_2[0]:
-                # print("Mismtach found at", key_item_1[0])
-                pass
+                print("Mismtach found at", key_item_1[0])
+                # pass
             else:
                 raise Exception
     if models_differ == 0:
@@ -117,6 +119,7 @@ for compared_name in COMPARED_NAMES:
     cfg = setup_cfg(config_file=CONFIG_FILE, opts=opts)
     model = build_model(cfg)
     DetectionCheckpointer(model).load(cfg.MODEL.WEIGHTS)
+    model.eval()
 
     # if np.array_equal(BB_PARAMS, BB_REF_PARAMS):
     #     print("Backbone parameters match!")

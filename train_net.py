@@ -55,6 +55,7 @@ from mask2former.modeling.transformer_decoder import (
     mask2former_transformer_decoder_CLIP_INC_GAUSS,
     mask2former_transformer_decoder_CLIP_TEXTPERTURB,
     mask2former_transformer_decoder_NOPOS,
+    mask2former_transformer_decoder_CLIP_DOMAINTEXTPERTURB,
 )
 from utils.arg_parser import my_argument_parser
 from utils.model_trainer import Trainer, killHook
