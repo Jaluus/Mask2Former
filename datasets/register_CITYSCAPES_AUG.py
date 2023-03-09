@@ -18,11 +18,11 @@ def _get_cityscapes_aug_files(image_dir, gt_dir):
         for basename in os.listdir(city_img_dir):
             image_file = os.path.join(city_img_dir, basename)
 
-            suffix = "rgb_anon.png"
+            suffix = "leftImg8bit.png"
             assert basename.endswith(suffix), basename
             basename = basename[: -len(suffix)]
 
-            label_file = os.path.join(city_gt_dir, basename + "gt_labelIds.png")
+            label_file = os.path.join(city_gt_dir, basename + "gtFine_labelIds.png")
 
             files.append((image_file, label_file))
     assert len(files), "No images found in {}".format(image_dir)
