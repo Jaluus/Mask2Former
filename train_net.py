@@ -32,7 +32,7 @@ from detectron2.projects.deeplab import add_deeplab_config, build_lr_scheduler
 from detectron2.solver.build import maybe_add_gradient_clipping
 from detectron2.utils.logger import setup_logger
 
-from datasets import register_ACDC
+from datasets import register_ACDC, register_CITYSCAPES_AUG
 from datasets.ACDC_evaluation import ACDCSemSegEvaluator
 
 # MaskFormer
